@@ -7,28 +7,14 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 const userSchema = new Schema({
   name: String,
-  lastname: String,
   username: String,
   email: String,
-  cname: String,
-  cemail: String,
-  cphone:String,
-  occupation:String,
   password:String,
-  businessid:String,
-  address:String,
-  image:String,
-  banner:String,
-  country:String,
-  city: String,
-  zone: String,
-  datebirth:String,
   datecreated: String,
+  pos:{x:0, y:0, z:0},
+  view:String,
+  active:Boolean,
   valid:Boolean,
-  request: [{
-    date: String,
-    idservice: String,
-  }],
 }, {
   toJSON: {
     virtuals: true,

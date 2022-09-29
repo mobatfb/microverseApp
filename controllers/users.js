@@ -83,11 +83,20 @@ function saveRequest(req, res) {
 //LOGIN
 function loginUser(req, res) {
 	var params = req.body;
-	var email = params.email.toLowerCase();
-	var password = params.password;
-	console.log('Ingresando a login')
-	_getUser();
+	_validData()
+	function _validData() {
+		if (!(params.email && params.password)) {
+			return res.status(200).send({
+				status: "warning",
+				message: 'Envía todos los campos'
+			})
+		} else {
+			_getUser();
+		}
+	}
 	function _getUser() {
+		var email = params.email.toLowerCase();
+		var password = params.password;
 		User.findOne({ email: email }, (err, userData) => {
 			if (err) {
 				return res.status(500).send({ message: "Error en la petición" });
@@ -103,12 +112,7 @@ function loginUser(req, res) {
 						} else {
 							//devolver datos del usuario
 							if (!userData.valid) {
-								var user = { email: userData.email, username: userData.username, name: userData.name, lastname: userData.lastname, id: userData.id, image: userData.image, banner: userData.banner }
-								if (userData.businessid) {
-									_getBusiness(userData.businessid, user)
-								} else {
-									return res.status(200).send({ user: user, business: null });
-								}
+								return res.status(200).send({ userId: userData.id });
 							} else {
 								return res.status(200).send({ message: "Usted a recibido un mensaje de validación en el correo: " + user.email });
 							}
@@ -123,83 +127,22 @@ function loginUser(req, res) {
 			}
 		});
 	}
-	function _getBusiness(id, user) {
-		Business.findById(id, (err, businessData) => {
-			if (err) {
-				return res.status(200).send({ status: "error", message: 'Error en la petición' });
-			}
-			if (businessData) {
-				var business = { name: businessData.name, lastname: businessData.lastname, id: businessData.id, image: businessData.image, banner: businessData.banner }
-				return res.status(200).send({ user: user, business: business});
-			} else {
-				return res.status(200).send({ status: "warning", message: 'No encontrado el negocio' });
-			}
-		});
-	}
-}
-//UPDATE USER ONLY BUSINESSID 
-function updateUserBusinessId(req, res) {
-	var userId = req.params.id;
-	var data = req.body;
-	_validUser()
-	function _validUser() {
-		User.findById(
-			userId
-		).exec((err, user) => {
-			if (err) {
-				return res.status(200).send({
-					status: 'error',
-					message: 'Error en la petición de registro ' + String(err)
-				});
-			}
-			if (user && data.email == user.email) {
-				if (data.email == user.email) {
-					_validData()
-				}
-			} else {
-				return res.status(200).send({
-					status: 'warning',
-					message: 'Datos de usuario no validos'
-				});
-			}
-		})
-	}
-	function _validData() {
-		if (!data.businessid) {
-			return res.status(200).send({
-				status: "warning",
-				message: 'Error en la petición codigo (0c00x10)'
-			})
-		} else {
-			_update()
-		}
-	}
-	function _update() {
-		console.log("update")
-		User.updateOne(
-			{
-				"_id": userId,
-			}, {
-			$set: { 'businessid': data.businessid }
-		}
-			, (err, userUpdated) => {
-				if (err) {
-					return res.status(200).send();
-				}
-				if (!userUpdated) {
-					return res.status(200).send();
-				}
-				return res.status(200).send({
-					user: true
-				});
-			});
-	}
 }
 //REGISTRAR USUARIO
 function createUser(req, res) {
 	var params = req.body;
-	_validDouble()
-	function _validDouble() {
+	_validData()
+	function _validData() {
+		if (!(params.username && params.email && params.password)) {
+			return res.status(200).send({
+				status: "warning",
+				message: 'Envía todos los campos'
+			})
+		} else {
+			_validDoubleEmail()
+		}
+	}
+	function _validDoubleEmail() {
 		User.findOne(
 			{ email: params.email.toLowerCase() },
 		).exec((err, user) => {
@@ -215,42 +158,41 @@ function createUser(req, res) {
 					message: 'El correo que intentas registrar ya existe'
 				});
 			} else {
-				_validData()
+				_validDoubleName()
+			}
+		})
+
+	}
+	function _validDoubleName() {
+		User.findOne(
+			{ username: params.username.toLowerCase() },
+		).exec((err, user) => {
+			if (err) {
+				return res.status(200).send({
+					status: 'error',
+					message: 'Error en la petición de registro ' + String(err)
+				});
+			}
+			if (user) {
+				return res.status(200).send({
+					status: 'warning',
+					message: 'El nombre de usuario que intentas registrar ya existe'
+				});
+			} else {
+				_setObjetc()
 			}
 		})
 	}
-	function _validData() {
-		if (!(params.name && params.lastname && params.email && params.password && params.country && params.city && params.zone && params.day && params.month && params.year)) {
-			return res.status(200).send({
-				status: "warning",
-				message: 'Envía todos los campos'
-			})
-		} else {
-			_setObjetc()
-		}
-	}
+
 	function _setObjetc() {
 		var user = new User();
-		user.name = params.name.toLowerCase()
-		user.lastname = params.lastname.toLowerCase()
-		const splits = user.name.split(" ")
-		const splits2 = user.lastname.split(" ")
-		user.username = splits[0] + splits2[0] + Date.now()
+		user.name = params.username
+		user.username = params.username.toLowerCase()
 		user.email = params.email.toLowerCase();
-		user.cname = params.cname;
-		user.cemail = "abc@mail.com"
-		user.cphone = "000000000"
-		user.businessid = ""
-		user.datebirth = params.day + "/" + params.month + "/" + params.year;
-		user.country = params.country;
-		user.zone = params.zone;
-		user.city = params.city;
 		const hoy = new Date(date);
 		user.datecreated = hoy
-		user.address = ""
-		user.occupation = "Sin ocupación"
-		user.image = ""
-		user.banner = ""
+		user.pos = { x: 1, y: 1, z: 1 }
+		user.active = false
 		user.valid = false
 		bcrypt.hash(params.password, null, null, (err, hash) => {
 			user.password = hash;
@@ -275,6 +217,127 @@ function createUser(req, res) {
 		})
 	}
 }
+//ACTUALIZAR UN USUARIO
+function updateUser(req, res) {
+	var userId = req.params.id;
+	var comboId = req.body.comboId;
+	var chars = "0123456789abcdefghijklmnopqrstuvwyz";
+	var password = "";
+	for (var i = 0; i <= 4; i++) {
+		var randomNumber = Math.floor(Math.random() * chars.length);
+		password += chars.substring(randomNumber, randomNumber + 1);
+	}
+	req.body.combo.code = password
+	var update = req.body;
+	//borrar propiedad password
+	delete update.password;
+	//controlar docente duplicados
+	User.find({
+		$or: [
+			{ email: update.email },
+		]
+	}).exec((err, users) => {
+		var existe_docente = false;
+		err = ""
+		users.forEach((user) => {
+			if (user && user._id != userId) {
+				existe_docente = true;
+			}
+		});
+
+		if (existe_docente) {
+			console.log('Los datos ya están en uso');
+			return res.status(200).send({ message: 'Los datos ya están en uso' });
+		}
+
+		//new:true => muestra info del docente actualizada
+		//new:false => muestra info del docente desactualizada
+		console.log("a guard:", update)
+		User.updateOne(
+			{
+				"_id": userId,
+				"combos._id": comboId
+			}, {
+			$set: { 'combos.$.title': update.combo.title, 'combos.$.info': update.combo.info, 'combos.$.date': update.combo.date, 'combos.$.code': update.combo.code, 'combos.$.act': update.combo.act }
+		}
+			, (err, userUpdated) => {
+				if (err) {
+					return res.status(500).send({ message: 'Error en la petición' });
+				}
+				if (!userUpdated) {
+					return res.status(404).send({ message: 'No se ha podido actualizar el docente' });
+				}
+				return res.status(200).send({
+					status: "success",
+					user: userUpdated,
+					message: "Registro actualizado con éxito !!"
+				});
+			});
+	});
+}
+//ACTIVAR UN USUARIO
+function activateUser(req, res) {
+	var params = req.body;
+	_validData()
+	function _validData() {
+		if (!params.id) {
+			return res.status(200).send({
+				status: "warning",
+				message: 'Envía todos los campos'
+			})
+		} else {
+			_verifyActive()
+		}
+	}
+	function _verifyActive() {
+		User.findById(
+			params.id
+		).exec((err, found) => {
+			if (err) {
+				return res.status(200).send({
+					status: 'error',
+					message: 'Error en la petición de registro ' + String(err)
+				});
+			}
+			if (found) {
+				if (found.active == true) {
+					return res.status(200).send({
+						status: 'success',
+						activated: true
+					});
+				} else {
+					_activeUser
+				}
+			} else {
+				return res.status(200).send({
+					status: 'error',
+					message: 'xError en la petición de registro ' + String(err)
+				});
+			}
+		})
+	}
+	function _activeUser() {
+		User.updateOne(
+			{
+				"_id": params.id,
+			}, {
+			$set: { 'active': true }
+		}
+			, (err, userActivated) => {
+				if (err) {
+					return res.status(500).send({ message: 'Error en la petición' });
+				}
+				if (!userActivated) {
+					return res.status(404).send({ message: 'No se ha podido actualizar el docente' });
+				}
+				return res.status(200).send({
+					status: "success",
+					activated: true
+				});
+			});
+
+	}
+}
 //CONSEGUIR UN USUARIO
 function readUser(req, res) {
 	var userName = req.params.name.toLowerCase();
@@ -283,24 +346,25 @@ function readUser(req, res) {
 			return res.status(200).send({ status: "error", message: 'Error en la petición' });
 		}
 		if (userData) {
-			var user={
-			name: userData.name,
-			id: userData.id,
-			lastname: userData.lastname,
-			username: userData.username,
-			cname: userData.cname,
-			cemail: userData.cemail,
-			cphone: userData.cphone,
-			occupation: userData.occupation,
-			address: userData.address,
-			image: userData.image,
-			banner: userData.banner,
-			country: userData.country,
-			city: userData.city,
-			zone: userData.zone,
-			datebirth: userData.datebirth,
-			datecreated: userData.datecreated,
-			valid: userData.valid}
+			var user = {
+				name: userData.name,
+				id: userData.id,
+				lastname: userData.lastname,
+				username: userData.username,
+				cname: userData.cname,
+				cemail: userData.cemail,
+				cphone: userData.cphone,
+				occupation: userData.occupation,
+				address: userData.address,
+				image: userData.image,
+				banner: userData.banner,
+				country: userData.country,
+				city: userData.city,
+				zone: userData.zone,
+				datebirth: userData.datebirth,
+				datecreated: userData.datecreated,
+				valid: userData.valid
+			}
 			return res.status(200).send({ user: user, status: "warning", message: 'existe' });
 		} else {
 			return res.status(200).send({ status: "warning", message: 'No encontrado el negocio' });
@@ -308,7 +372,7 @@ function readUser(req, res) {
 	});
 }
 //Edición de datos de docente
-function updateUser(req, res) {
+function xupdateUser(req, res) {
 	var userId = req.params.id;
 	var comboId = req.body.comboId;
 	var chars = "0123456789abcdefghijklmnopqrstuvwyz";
@@ -776,8 +840,8 @@ module.exports = {
 	home,
 	pruebas,
 	loginUser,
-	updateUserBusinessId,
 	createUser,
+	activateUser,
 	readUser,
 	updateUser,
 	deleteUser,

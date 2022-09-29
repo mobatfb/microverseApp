@@ -16,12 +16,12 @@ api.get('/home', UserController.home);
 api.get('/pruebas', md_auth.ensureAuth , UserController.pruebas);
 
 api.post('/loginuser', UserController.loginUser);
-api.put('/updateuserbusinesid/:id', UserController.updateUserBusinessId);
 api.put('/pushresult', UserController.pushAny);
 
 api.post('/createuser', UserController.createUser);
 api.get('/readuser/:name', UserController.readUser);
 api.get('/updateuser/:name', UserController.updateUser);
+api.post('/activateuser', UserController.activateUser);
 api.delete('/deleteuser/:id', UserController.deleteUser); 
 
 api.get('/usergetMax', UserController.userGetMax);
