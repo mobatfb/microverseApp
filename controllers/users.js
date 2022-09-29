@@ -303,10 +303,11 @@ function activateUser(req, res) {
 				if (found.active == true) {
 					return res.status(200).send({
 						status: 'success',
-						activated: true
+						activated: true,
+						pos: found.pos
 					});
 				} else {
-					_activeUser
+					_activeUser()
 				}
 			} else {
 				return res.status(200).send({
@@ -324,16 +325,15 @@ function activateUser(req, res) {
 			$set: { 'active': true }
 		}
 			, (err, userActivated) => {
+				console.log(userActivated)
 				if (err) {
 					return res.status(500).send({ message: 'Error en la petición' });
 				}
 				if (!userActivated) {
 					return res.status(404).send({ message: 'No se ha podido actualizar el docente' });
+				}else{
+					_verifyActive()
 				}
-				return res.status(200).send({
-					status: "success",
-					activated: true
-				});
 			});
 
 	}
