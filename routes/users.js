@@ -21,7 +21,11 @@ api.put('/pushresult', UserController.pushAny);
 api.post('/createuser', UserController.createUser);
 api.get('/readuser/:name', UserController.readUser);
 api.get('/updateuser/:name', UserController.updateUser);
-api.post('/activateuser', UserController.activateUser);
+api.post('/getuser', UserController.getUser);
+api.post('/savesignal', UserController.saveSignal);
+api.post('/getsignal', UserController.getSignal);
+api.post('/getusersactive', UserController.getUsers);
+
 api.delete('/deleteuser/:id', UserController.deleteUser); 
 
 api.get('/usergetMax', UserController.userGetMax);

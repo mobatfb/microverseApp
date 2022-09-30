@@ -275,8 +275,75 @@ function updateUser(req, res) {
 			});
 	});
 }
-//ACTIVAR UN USUARIO
-function activateUser(req, res) {
+//OBTENER DATOS DE USUARIO
+function getUser(req, res) {
+	var params = req.body;
+	_validData()
+	function _validData() {
+		if (!params.id) {
+			return res.status(200).send({
+				status: "warning",
+				message: 'noid'
+			})
+		} else {
+			_getUser()
+		}
+	}
+	function _verifyActive() {
+		User.findById(
+			params.id
+		).exec((err, found) => {
+			if (err) {
+				return res.status(200).send({
+					status: 'error',
+					message: 'Error en la petición de registro ' + String(err)
+				});
+			}
+			if (found) {
+				_getUser()
+			} else {
+				return res.status(200).send({
+					status: 'error',
+					message: 'xError en la petición de registro ' + String(err)
+				});
+			}
+		})
+	}
+	function _getUser() {
+		User.findById(
+			params.id
+		).exec((err, getted) => {
+			if (err) {
+				return res.status(200).send({
+					status: 'error',
+					message: 'Error en la petición de registro ' + String(err)
+				});
+			}
+			if (getted) {
+				if (getted.id) {
+					console.log("get-user")
+					return res.status(200).send({
+						status: 'success',
+						getted: {name:getted.name, username:getted.username, pos: getted.pos,view:getted.view}
+					});
+				} else {
+					return res.status(200).send({
+						status: 'error',
+						message: 'noactive'
+					});
+				}
+			} else {
+				return res.status(200).send({
+					status: 'error',
+					message: 'xError en la petición de registro ' + String(err)
+				});
+			}
+		})
+
+	}
+}
+//GUARDAR SEÑAL DE USUARIO
+function saveSignal(req, res) {
 	var params = req.body;
 	_validData()
 	function _validData() {
@@ -286,7 +353,7 @@ function activateUser(req, res) {
 				message: 'Envía todos los campos'
 			})
 		} else {
-			_verifyActive()
+			_saveSignal()
 		}
 	}
 	function _verifyActive() {
@@ -307,7 +374,7 @@ function activateUser(req, res) {
 						pos: found.pos
 					});
 				} else {
-					_activeUser()
+					_saveSignal()
 				}
 			} else {
 				return res.status(200).send({
@@ -317,26 +384,126 @@ function activateUser(req, res) {
 			}
 		})
 	}
-	function _activeUser() {
+	function _saveSignal() {
 		User.updateOne(
 			{
 				"_id": params.id,
 			}, {
-			$set: { 'active': true }
+			$set: { 'active': true, 'pos':params.pos }
 		}
-			, (err, userActivated) => {
-				console.log(userActivated)
+			, (err, saved) => {
 				if (err) {
 					return res.status(500).send({ message: 'Error en la petición' });
 				}
-				if (!userActivated) {
+				if (!saved) {
 					return res.status(404).send({ message: 'No se ha podido actualizar el docente' });
 				}else{
-					_verifyActive()
+					console.log("saved-signal")
+					return res.status(200).send({
+						status: 'success',
+						saved: true
+					});
 				}
 			});
 
 	}
+}
+//OBTENER SEÑAL DE USUARIO
+function getSignal(req, res) {
+	var params = req.body;
+	_validData()
+	function _validData() {
+		if (!params.id) {
+			return res.status(200).send({
+				status: "warning",
+				message: 'noid'
+			})
+		} else {
+			_getSignal()
+		}
+	}
+	function _verifyActive() {
+		User.findById(
+			params.id
+		).exec((err, found) => {
+			if (err) {
+				return res.status(200).send({
+					status: 'error',
+					message: 'Error en la petición de registro ' + String(err)
+				});
+			}
+			if (found) {
+				if (found.active == true) {
+					return res.status(200).send({
+						status: 'success',
+						activated: true,
+						pos: found.pos
+					});
+				} else {
+					_getSignal()
+				}
+			} else {
+				return res.status(200).send({
+					status: 'error',
+					message: 'xError en la petición de registro ' + String(err)
+				});
+			}
+		})
+	}
+	function _getSignal() {
+		User.findById(
+			params.id
+		).exec((err, getted) => {
+			if (err) {
+				return res.status(200).send({
+					status: 'error',
+					message: 'Error en la petición de registro ' + String(err)
+				});
+			}
+			if (getted) {
+				if (getted.id) {
+					console.log("get-signal")
+					return res.status(200).send({
+						status: 'success',
+						getted: {pos: getted.pos,view:getted.view}
+					});
+				} else {
+					return res.status(200).send({
+						status: 'error',
+						message: 'noactive'
+					});
+				}
+			} else {
+				return res.status(200).send({
+					status: 'error',
+					message: 'xError en la petición de registro ' + String(err)
+				});
+			}
+		})
+
+	}
+}
+
+//DEVOLVER UN LISTADO DE USUARIOS - CONECTADOS
+function getUsers(req, res) {
+	var params = req.body;//recoger el id del docente logueado
+	var page = 1;
+	var itemsPerPage = 20; //cantidad de docentes que se listaran por pagina
+	console.log("pre")
+	User.find({active: true}),(err, users) => {
+	console.log("aki",users)
+		if (err) {
+			return res.status(500).send({ message: 'Error en la petición' });
+		}
+
+		if (!users) {
+			return res.status(404).send({ message: 'No hay docente disponibles' });
+		}
+		return res.status(200).send({
+			users
+		});
+
+	};
 }
 //CONSEGUIR UN USUARIO
 function readUser(req, res) {
@@ -491,7 +658,7 @@ function userGetMax() {
 
 }
 //DEVOLVER UN LISTADO DE USUARIOS - PAGINADO
-function getUsers(req, res) {
+function xgetUsers(req, res) {
 	var identify_user_id = req.user.sub;//recoger el id del docente logueado
 	var page = 1;
 	var buscar = req.params.buscar;
@@ -841,7 +1008,9 @@ module.exports = {
 	pruebas,
 	loginUser,
 	createUser,
-	activateUser,
+	getUser,
+	saveSignal,
+	getSignal,
 	readUser,
 	updateUser,
 	deleteUser,
